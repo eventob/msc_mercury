@@ -62,6 +62,9 @@ def user_input():
     if set_satellite == 'y':
         # Prompt user to choose the rotation of the satellite orbit
         set_rot = int(input("Choose the TAA of the satellite orbit (0, 90, 180, 270): "))
+    else:
+        # Bypass the if-test by setting the rotation to 0
+        set_rot = 0
 
     return set_run, set_plane, set_parameter, set_time, set_hline, set_vline, set_satellite, set_limits, set_rot
 
@@ -211,16 +214,16 @@ def satellite_position():
         # Mark every 30 minutes with a red dot
         plt.plot(inside_datagrid[i * min_to_sec, 0], inside_datagrid[i * min_to_sec, 1], 'ro', markersize=3)
     
-    return inside_datagrid, min_to_sec
+    return inside_datagrid, min_to_sec, int(len(inside_datagrid))
 
 
-def satellite_data(sat_coord, X, Y, set_parameter, set_rot, conv_min):
+def satellite_data(sat_coord, X, Y, set_parameter, set_rot, conv_min, total):
     '''
     Function to plot and extract Mio's virtual data along the trajectory.
     '''
     # Draw a plot with Mio's virtual data along the trajectory
     fig, ax = plt.subplots(5, figsize=(8, 12), sharex=True, sharey=False, layout='tight')
-    fig.suptitle("Electric field and number density along Mio's orbit at TAA = " + str(set_rot) + '${}^\\circ$', fontsize=16)
+    fig.suptitle("Magnetic field and number density along Mio's orbit at TAA = " + str(set_rot) + '${}^\\circ$', fontsize=16)
     # fig.supxlabel('Time [hours]'), fig.supylabel(name_colorbar(set_parameter)[0])
     sat_time = np.linspace(0, len(sat_coord), len(sat_coord))
     sat_time = sat_time / conv_min
@@ -244,13 +247,13 @@ def satellite_data(sat_coord, X, Y, set_parameter, set_rot, conv_min):
     sat_zdata = sat_xdata.copy()                                  # Empty array for the z-component satellite data
     num_dens = sat_xdata.copy()                                   # Empty array for the number density data
     for j in paths:
-        # data_x = get_data(j, set_parameter)[2] + get_data(j, set_parameter + 3)[2] + get_data(j, set_parameter + 6)[2]               # Extract the data for the magnetic field
-        # data_y = get_data(j, set_parameter + 1)[2] + get_data(j, set_parameter + 4)[2] + get_data(j, set_parameter + 7)[2]           # Extract the data for the magnetic field
-        # data_z = get_data(j, set_parameter + 2)[2] + get_data(j, set_parameter + 5)[2] + get_data(j, set_parameter + 8)[2]           # Extract the data for the magnetic field
+        data_x = get_data(j, set_parameter)[2] + get_data(j, set_parameter + 3)[2] + get_data(j, set_parameter + 6)[2]               # Extract the data for the magnetic field
+        data_y = get_data(j, set_parameter + 1)[2] + get_data(j, set_parameter + 4)[2] + get_data(j, set_parameter + 7)[2]           # Extract the data for the magnetic field
+        data_z = get_data(j, set_parameter + 2)[2] + get_data(j, set_parameter + 5)[2] + get_data(j, set_parameter + 8)[2]           # Extract the data for the magnetic field
         
-        data_x = get_data(j, set_parameter)[2]          # Extract the data for electric field
-        data_y = get_data(j, set_parameter + 1)[2]      # Extract the data for electric field
-        data_z = get_data(j, set_parameter + 2)[2]      # Extract the data for electric field
+        # data_x = get_data(j, set_parameter)[2]          # Extract the data for electric field
+        # data_y = get_data(j, set_parameter + 1)[2]      # Extract the data for electric field
+        # data_z = get_data(j, set_parameter + 2)[2]      # Extract the data for electric field
         
         number_density = get_data(j, 3)[2]
 
@@ -283,26 +286,24 @@ def satellite_data(sat_coord, X, Y, set_parameter, set_rot, conv_min):
         # plt.scatter(sat_time / 1800, sat_data, c=sat_data, cmap='plasma', s=1, zorder=4)
         names = 'S1', 'S6', 'S5', 'S8', 'S9'
         color = 'black', 'red', 'blue', 'green', 'purple'
-        # ax[plotnum].axvline(8104 / conv_min, label='Mercury geological equator', linestyle='--', color='0.85')
         ax[0].plot(sat_time, sat_xdata, color=color[plotnum], zorder=4, label=names[plotnum])
-        ax[0].set_ylabel('$\\mathbf{E}_x$ [nT]')
+        ax[0].set_ylabel('$\\mathbf{B}_x$ [nT]')
         ax[1].plot(sat_time, sat_ydata, color=color[plotnum], zorder=4, label=names[plotnum])
-        ax[1].set_ylabel('$\\mathbf{E}_y$ [nT]')
+        ax[1].set_ylabel('$\\mathbf{B}_y$ [nT]')
         ax[2].plot(sat_time, sat_zdata, color=color[plotnum], zorder=4, label=names[plotnum])
-        ax[2].set_ylabel('$\\mathbf{E}_z$ [nT]')
+        ax[2].set_ylabel('$\\mathbf{B}_z$ [nT]')
         ax[3].plot(sat_time, tot_data, color=color[plotnum], zorder=4, label=names[plotnum])
-        ax[3].set_ylabel('$|\\mathbf{E}|$ [nT]')
+        ax[3].set_ylabel('$|\\mathbf{B}|$ [nT]')
         ax[4].plot(sat_time, num_dens, color=color[plotnum], zorder=4, label=names[plotnum])
         ax[4].set_ylabel('$N_{SW}$ [$10^6/m^3$]')
         ax[plotnum].set_xticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9], ['00:00', '00:30', '01:00', '01:30', '02:00', '02:30', '03:00', '03:30', '04:00', '04:30'])
         ax[plotnum].grid(color='0.8') # ax[plotnum].set_xlim(-0.1, 9.1), 
         plotnum += 1
     
-    ax[0].legend(loc='best', fontsize='small')
-    ax[1].legend(loc='best', fontsize='small')
-    ax[2].legend(loc='best', fontsize='small')
-    ax[3].legend(loc='best', fontsize='small')
-    ax[4].legend(loc='best', fontsize='small')
+    for i in range(0, 5):
+        ax[i].axvline((total / 2) / conv_min, label='North pole ($x = 0$)', linestyle='--', color='0.85')
+        ax[i].legend(loc='best', fontsize='small')
+    
     plt.savefig('E:/UiO master merkur simulasjoner/animation/plots/' + 'mio_data_temp' + '.pdf', bbox_inches='tight')
     plt.clf(), plt.cla(), plt.close()
 
@@ -317,6 +318,7 @@ def draw_2d_figure(path, bar, title, set_yval, set_xval):
     fig, ax = plt.subplots(1, 1)
     plt.figure(1, layout='tight')
     x_grid, y_grid, data = get_data(path, set_parameter)
+    # data = get_data(path, set_parameter)[2] # + get_data(path, set_parameter + 3)[2] #+ get_data(path, set_parameter + 6)[2]
 
     # Move the center of the simulation to Mercury's geocenter and convert to km
     X = ((x_grid - (239.625*xc))) / 1e3
@@ -328,8 +330,8 @@ def draw_2d_figure(path, bar, title, set_yval, set_xval):
         X = ((x_grid - ((239.625 - 80)*xc))) / 1e3
     if set_satellite == 'y':
         # Draw Mio's satellite orbit in 2D
-        sat_pos, conv_min = satellite_position()
-        satellite_data(sat_pos, X, Y, set_parameter, set_rot, conv_min)
+        sat_pos, conv_min, total = satellite_position()
+        satellite_data(sat_pos, X, Y, set_parameter, set_rot, conv_min, total)
     if set_limits == 'y':
         # Set the colorbar limits manually
         data_min = input("Min value: ")
@@ -367,20 +369,22 @@ def draw_2d_figure(path, bar, title, set_yval, set_xval):
         ax.set_xlabel('x / $R_M$'), ax.set_ylabel('z / $R_M$')
         ax.plot(0, 11.736*xc / 1e3, 'o', color='red', markersize=1.5, label='$C_m$')    # Mark Mercury's magnetic center in the xz-plane
 
-    # Draw the induced magnetic field vectors over the simulation data
-    # ax.quiver(X[::250], Y[::250], get_data(path, 19)[2][::250], get_data(path, 20)[2][::250], color='black', zorder=3, label='Bp')
+    # Draw the magnetic field vectors over the simulation data
+    # comb_bfield_x = get_data(path, 19)[2] + get_data(path, 22)[2] + get_data(path, 25)[2]
+    # comb_bfield_z = get_data(path, 21)[2] + get_data(path, 24)[2] + get_data(path, 27)[2]
+    # ax.quiver(X[::250], Y[::250], comb_bfield_x[::250], comb_bfield_z[::250])
     
     # Draw an horizontal line at a chosen y-value over the 2D grid
     if set_yval != 0:
         # Only if the chosen y-value is different than 0, search the grid for the corresponding x-value
         y_corr = np.array([Y[0 + (320 * i)] for i in range(0, 320)])       
-        ax.hlines(y_corr[set_yval], min(X), 0, color='lightgreen', zorder=3, linewidth=1, linestyle='--', label='HL')
+        ax.hlines(y_corr[set_yval], min(X), 0, zorder=3, linewidth=1, linestyle='--', label='HL')
     
     # Draw an vertical line at a chosen x-value over the 2D grid
     if set_xval != 0:
         # Only if the chosen x-value is different than 0, search the grid for the corresponding y-value
         x_corr = np.array(X[0:319])                    # Correct x-axis values to input
-        ax.vlines(x_corr[set_xval], min(Y), max(Y), color='lightgreen', zorder=3, linewidth=1, linestyle='--', label='VL')      # Plotting the vertical line
+        ax.vlines(x_corr[set_xval], min(Y), max(Y), zorder=3, linewidth=1, linestyle='--', label='VL')      # Plotting the vertical line
     
     # Save the figure and close the figure window
     plt.legend(loc='best', fontsize='small')
@@ -488,8 +492,11 @@ def linear_data_extraction(set_xval, set_yval, index):
     # Plotting scheme for a vertical line at a chosen value of x
     if set_xval != 0:
         # print("Data extracted at x = " + str(draw_xax[set_xval]) + " km")
-        plt.figure(3)
+        avg_vldata = np.average(vdata_line)
+        print(avg_vldata, 4)
+        plt.figure(3, layout='tight')
         plt.scatter(draw_xax, vdata_line, label='VL data', s=2, color='k', zorder=1)
+        plt.axhline(y=avg_vldata, color='r', linestyle='--', zorder=0, label='Average value')
         if set_plane == 'xy':
             plt.xlabel('y / $R_M$')
             coordinates = '%.2f' % (int(draw_xax[set_xval]) / r_m) + ', 0, 0) $R_M$'
@@ -555,6 +562,6 @@ if set_time == '00':
             print('<----------------------------------------->')
 else:
     draw_2d_figure(path, name_colorbar(set_parameter)[0], name_colorbar(set_parameter)[1], set_yval, set_xval)
-    # linear_data_extraction(set_xval, set_yval, set_parameter)
+    linear_data_extraction(set_xval, set_yval, set_parameter)
     # elliptical()
     # plt.show()
